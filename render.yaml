@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: scam-link-detector-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free  # Change to "starter" or "standard" for production
+    envVars:
+      - key: API_KEY
+        generateValue: true   # Render auto-generates a secure random value
+      - key: DATABASE_URL
+        value: "sqlite+aiosqlite:///./scamdetector.db"
+      - key: LOG_LEVEL
+        value: "INFO"
+      - key: CORS_ORIGINS
+        value: "*"
+      # Add your Google Safe Browsing key if you have one:
+      # - key: GOOGLE_SAFE_BROWSING_API_KEY
+      #   value: "your-key-here"
+    healthCheckPath: /health

@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Scam Link Detector</string>
+    <string name="scan_now">Scan Now</string>
+    <string name="paste">Paste</string>
+    <string name="clear">Clear</string>
+    <string name="enter_url_hint">Enter or paste URL here</string>
+    <string name="scan_history">Scan History</string>
+    <string name="no_history">No scans yet. Enter a URL above to get started!</string>
+    <string name="clear_history">Clear History</string>
+    <string name="view_full_report">View Full Report</string>
+    <string name="threat_report">Threat Report</string>
+    <string name="qr_scanner">QR Code Scanner</string>
+    <string name="scanning">Scanning...</string>
+    <string name="point_camera">Point camera at QR code</string>
+    <string name="clipboard_detected">New link detected. Scan now?</string>
+    <string name="safe">Safe</string>
+    <string name="suspicious">Suspicious</string>
+    <string name="phishing">Phishing</string>
+</resources>

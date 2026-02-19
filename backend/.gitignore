@@ -1,0 +1,11 @@
+# Backend
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+dist/
+build/
+.env
+*.db
+venv/
+.venv/
