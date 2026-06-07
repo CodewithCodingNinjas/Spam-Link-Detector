@@ -1,6 +1,37 @@
 {
-  "model_name": "RandomForest",
-  "auc_score": 1.0,
+  "model_name": "GradientBoosting",
+  "data_source": "real (OpenPhish + Phishing.Database + top-100k legit domains)",
+  "cv_selection": {
+    "RandomForest": {
+      "cv_auc_mean": 0.9994,
+      "cv_auc_std": 0.0006
+    },
+    "GradientBoosting": {
+      "cv_auc_mean": 0.9996,
+      "cv_auc_std": 0.0002
+    },
+    "LogisticRegression": {
+      "cv_auc_mean": 0.9932,
+      "cv_auc_std": 0.0016
+    }
+  },
+  "test_metrics": {
+    "accuracy": 0.9925,
+    "precision": 0.995,
+    "recall": 0.99,
+    "f1": 0.9925,
+    "roc_auc": 0.9998
+  },
+  "confusion_matrix": {
+    "true_safe": {
+      "pred_safe": 796,
+      "pred_phishing": 4
+    },
+    "true_phishing": {
+      "pred_safe": 8,
+      "pred_phishing": 792
+    }
+  },
   "feature_names": [
     "url_length",
     "domain_length",
@@ -28,9 +59,75 @@
     "special_char_ratio",
     "is_suspicious_tld",
     "has_login_form_pattern",
-    "is_shortened"
+    "is_shortened",
+    "shannon_entropy",
+    "has_punycode",
+    "path_depth",
+    "query_param_count"
   ],
-  "n_features": 27,
-  "training_samples": 8000,
-  "test_samples": 2000
+  "n_features": 31,
+  "training_samples": 6400,
+  "test_samples": 1600,
+  "top_features": [
+    [
+      "num_dots",
+      0.6489
+    ],
+    [
+      "num_digits_in_domain",
+      0.1289
+    ],
+    [
+      "domain_length",
+      0.0684
+    ],
+    [
+      "special_char_ratio",
+      0.0388
+    ],
+    [
+      "num_subdomains",
+      0.0315
+    ],
+    [
+      "url_length",
+      0.0281
+    ],
+    [
+      "path_length",
+      0.0134
+    ],
+    [
+      "path_depth",
+      0.0094
+    ],
+    [
+      "num_slashes",
+      0.0082
+    ],
+    [
+      "shannon_entropy",
+      0.0057
+    ],
+    [
+      "digit_ratio",
+      0.0056
+    ],
+    [
+      "num_underscores",
+      0.0035
+    ],
+    [
+      "query_param_count",
+      0.0029
+    ],
+    [
+      "has_login_form_pattern",
+      0.0019
+    ],
+    [
+      "is_suspicious_tld",
+      0.0018
+    ]
+  ]
 }

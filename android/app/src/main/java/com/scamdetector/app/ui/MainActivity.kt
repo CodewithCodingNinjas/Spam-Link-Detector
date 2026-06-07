@@ -5,11 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.view.animation.AnimationUtils
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.scamdetector.app.R
 import com.scamdetector.app.databinding.ActivityMainBinding
@@ -25,6 +27,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var historyAdapter: ScanHistoryAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Edge-to-edge dark layout — status bar is transparent via theme
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -209,33 +213,40 @@ class MainActivity : AppCompatActivity() {
         binding.tvError.visibility = View.GONE
         binding.btnScan.isEnabled = false
         binding.btnScan.text = "Scanning..."
+        // Pulse animation while scanning
+        val pulse = AnimationUtils.loadAnimation(this, R.anim.pulse)
+        binding.btnScan.startAnimation(pulse)
     }
 
     private fun showResult(report: com.scamdetector.app.data.model.ThreatReport) {
+        // Stop scan button animation
+        binding.btnScan.clearAnimation()
+
         binding.progressBar.visibility = View.GONE
         binding.layoutResultContent.visibility = View.VISIBLE
         binding.tvError.visibility = View.GONE
         binding.btnScan.isEnabled = true
         binding.btnScan.text = "Scan Now"
 
+        // Slide-up + fade-in animation on result card
+        val slideUp = AnimationUtils.loadAnimation(this, R.anim.slide_up_fade_in)
+        binding.cardResult.startAnimation(slideUp)
+
         // Risk Score
         binding.tvRiskScore.text = report.riskScore.toInt().toString()
         binding.circularProgress.progress = report.riskScore.toInt()
 
-        // Status
+        // 5-tier status colors
         binding.tvStatus.text = report.status
-        val statusColor = when (report.status) {
-            "Safe" -> R.color.safe_green
-            "Suspicious" -> R.color.suspicious_yellow
-            "Phishing" -> R.color.phishing_red
-            else -> R.color.suspicious_yellow
-        }
+        val statusColor = statusColor(report.status)
         binding.tvStatus.setTextColor(ContextCompat.getColor(this, statusColor))
         binding.circularProgress.setIndicatorColor(ContextCompat.getColor(this, statusColor))
+        // Tint result card border to match status
+        binding.cardResult.strokeColor = ContextCompat.getColor(this, statusColor)
 
         // ML Prediction
         binding.tvMlPrediction.text = report.mlPrediction
-        binding.tvConfidence.text = "${report.confidence}%"
+        binding.tvConfidence.text = "${report.confidence.toInt()}%"
 
         // Details summary
         binding.tvDomainAge.text = report.domainAgeDays?.let { "${it} days" } ?: "N/A"
@@ -263,6 +274,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showError(message: String) {
+        binding.btnScan.clearAnimation()
         binding.progressBar.visibility = View.GONE
         binding.layoutResultContent.visibility = View.GONE
         binding.tvError.visibility = View.VISIBLE
@@ -274,5 +286,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun hideResultCard() {
         binding.cardResult.visibility = View.GONE
+    }
+
+    /** Map 5-tier status to the corresponding color resource. */
+    private fun statusColor(status: String): Int = when (status) {
+        "Safe"        -> R.color.safe_green
+        "Low Risk"    -> R.color.low_risk_blue
+        "Suspicious"  -> R.color.suspicious_yellow
+        "High Risk"   -> R.color.high_risk_orange
+        "Phishing"    -> R.color.phishing_red
+        else          -> R.color.suspicious_yellow
     }
 }

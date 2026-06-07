@@ -8,6 +8,15 @@ android {
     namespace = "com.scamdetector.app"
     compileSdk = 34
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("release.keystore")
+            storePassword = "scamdetector2026"
+            keyAlias = "scamdetector"
+            keyPassword = "scamdetector2026"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.scamdetector.app"
         minSdk = 24
@@ -17,20 +26,21 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Backend API URL - change for production
-        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8000/\"")
-        buildConfigField("String", "API_KEY", "\"dev-api-key-change-me\"")
+        // Backend API URL
+        buildConfigField("String", "API_BASE_URL", "\"https://scam-link-detector-api.onrender.com/\"")
+        buildConfigField("String", "API_KEY", "\"my-secure-api-key-2026\"")
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            buildConfigField("String", "API_BASE_URL", "\"https://your-api-domain.com/\"")
+            buildConfigField("String", "API_BASE_URL", "\"https://scam-link-detector-api.onrender.com/\"")
         }
     }
 

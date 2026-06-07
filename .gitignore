@@ -8,6 +8,9 @@ build/
 .env
 *.db
 ml/model/
+ml/data/
+backend/ml/model/
+backend/ml/data/
 venv/
 .venv/
 

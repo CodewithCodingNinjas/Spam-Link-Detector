@@ -2,8 +2,9 @@
 URL Feature Extraction Module
 Extracts structural features from URLs for ML model and rule-based analysis.
 """
+import math
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 from typing import Dict, Any
 from config import settings
 
@@ -13,12 +14,19 @@ class URLFeatureExtractor:
 
     def __init__(self):
         self.suspicious_keywords = settings.SUSPICIOUS_KEYWORDS
+        self.suspicious_tlds = getattr(settings, "SUSPICIOUS_TLDS", [
+            ".tk", ".ml", ".ga", ".cf", ".gq", ".xyz", ".top",
+            ".buzz", ".club", ".work", ".info", ".click", ".link",
+            ".icu", ".cam", ".rest", ".monster",
+            ".ru", ".cn", ".pw", ".cc", ".su",
+        ])
 
     def extract(self, url: str) -> Dict[str, Any]:
         """Extract all features from a URL string."""
         parsed = urlparse(url)
         domain = parsed.netloc or parsed.path.split("/")[0]
         path = parsed.path or ""
+        query_params = parse_qs(parsed.query)
         full_url = url.lower()
 
         features = {
@@ -56,22 +64,38 @@ class URLFeatureExtractor:
             # Entropy & ratios
             "digit_ratio": self._digit_ratio(url),
             "special_char_ratio": self._special_char_ratio(url),
+            "shannon_entropy": self._shannon_entropy(url),
 
             # TLD analysis
             "tld": self._get_tld(domain),
-            "is_suspicious_tld": 1 if self._get_tld(domain) in [
-                ".tk", ".ml", ".ga", ".cf", ".gq", ".xyz", ".top",
-                ".buzz", ".club", ".work", ".info", ".click", ".link",
-                ".icu", ".cam", ".rest", ".monster",
-            ] else 0,
+            "is_suspicious_tld": 1 if self._get_tld(domain) in self.suspicious_tlds else 0,
 
-            # URL contains common phishing patterns
+            # Phishing patterns
             "has_login_form_pattern": 1 if re.search(
                 r"(login|signin|verify|auth|secure|account|update|confirm)", full_url
             ) else 0,
 
             # Shortener detection
             "is_shortened": 1 if self._is_shortened_url(domain) else 0,
+
+            # --- New features ---
+
+            # Punycode / IDN homograph attack
+            "has_punycode": 1 if "xn--" in domain.lower() else 0,
+
+            # Path depth (number of path segments)
+            "path_depth": len([s for s in path.split("/") if s]),
+
+            # Query parameter count
+            "query_param_count": len(query_params),
+
+            # Data URI scheme (data:text/html used in phishing)
+            "has_data_uri": 1 if full_url.startswith("data:") else 0,
+
+            # Email address embedded in URL
+            "has_email_in_url": 1 if re.search(
+                r"[a-zA-Z0-9._%+\-]+%40[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}", url
+            ) or "@" in (parsed.netloc or "") else 0,
         }
 
         return features
@@ -90,6 +114,9 @@ class URLFeatureExtractor:
             "suspicious_keyword_count", "has_suspicious_keywords",
             "digit_ratio", "special_char_ratio",
             "is_suspicious_tld", "has_login_form_pattern", "is_shortened",
+            # New numeric features appended (model may ignore extra cols)
+            "shannon_entropy", "has_punycode", "path_depth",
+            "query_param_count",
         ]
         return [features[k] for k in numeric_keys]
 
@@ -107,6 +134,8 @@ class URLFeatureExtractor:
             "suspicious_keyword_count", "has_suspicious_keywords",
             "digit_ratio", "special_char_ratio",
             "is_suspicious_tld", "has_login_form_pattern", "is_shortened",
+            "shannon_entropy", "has_punycode", "path_depth",
+            "query_param_count",
         ]
 
     def _count_suspicious_keywords(self, url: str) -> int:
@@ -133,6 +162,17 @@ class URLFeatureExtractor:
         return len(re.findall(r"[^a-zA-Z0-9]", url)) / len(url)
 
     @staticmethod
+    def _shannon_entropy(url: str) -> float:
+        """Calculate Shannon entropy of the URL string (bits per character)."""
+        if not url:
+            return 0.0
+        freq: Dict[str, int] = {}
+        for ch in url:
+            freq[ch] = freq.get(ch, 0) + 1
+        length = len(url)
+        return -sum((f / length) * math.log2(f / length) for f in freq.values())
+
+    @staticmethod
     def _get_tld(domain: str) -> str:
         parts = domain.split(".")
         if len(parts) >= 2:
@@ -146,6 +186,7 @@ class URLFeatureExtractor:
             "is.gd", "buff.ly", "adf.ly", "bit.do", "mcaf.ee",
             "su.pr", "tiny.cc", "cutt.ly", "rb.gy", "shorturl.at",
             "v.gd", "qr.ae", "lnkd.in", "db.tt", "j.mp",
+            "shorte.st", "clck.ru", "x.co", "s.coop", "cli.gs",
         ]
         return domain.lower() in shorteners
 

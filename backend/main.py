@@ -165,7 +165,29 @@ async def check_link(
         session.add(scan_record)
         await session.commit()
 
-        return ThreatReport(**report)
+        return ThreatReport(
+            url=report["url"],
+            risk_score=report["risk_score"],
+            status=report["status"],
+            risk_level=report.get("risk_level", report["status"]),
+            confidence=report["confidence"],
+            ml_prediction=report["ml_prediction"],
+            ml_confidence=report["ml_confidence"],
+            domain_age_days=report.get("domain_age_days"),
+            ssl_valid=report.get("ssl_valid"),
+            ssl_issuer=report.get("ssl_issuer"),
+            ssl_expiry=report.get("ssl_expiry"),
+            impersonation_risk=report.get("impersonation_risk", False),
+            impersonation_target=report.get("impersonation_target"),
+            suspicious_keywords=report.get("suspicious_keywords", []),
+            url_features=report.get("url_features"),
+            google_safe_browsing=report.get("google_safe_browsing"),
+            redirect_count=report.get("redirect_count", 0),
+            final_url=report.get("final_url"),
+            threat_summary=report.get("threat_summary"),
+            recommendations=report.get("recommendations", []),
+            scanned_at=report["scanned_at"],
+        )
 
     except Exception as e:
         logger.error(f"Error scanning URL {body.url}: {e}")

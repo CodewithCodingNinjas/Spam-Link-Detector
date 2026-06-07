@@ -40,7 +40,8 @@ class ThreatReport(BaseModel):
     """Full threat analysis response."""
     url: str
     risk_score: float
-    status: str  # "Safe" | "Suspicious" | "Phishing"
+    status: str           # "Safe" | "Low Risk" | "Suspicious" | "High Risk" | "Phishing"
+    risk_level: str       # 5-tier label matching status
     confidence: float
     ml_prediction: str
     ml_confidence: float
@@ -53,6 +54,9 @@ class ThreatReport(BaseModel):
     suspicious_keywords: List[str] = []
     url_features: Optional[dict] = None
     google_safe_browsing: Optional[str] = None
+    redirect_count: int = 0
+    final_url: Optional[str] = None
+    threat_summary: Optional[str] = None   # Human-readable one-line WHY
     recommendations: List[str] = []
     scanned_at: str
 

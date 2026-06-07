@@ -1,9 +1,12 @@
 package com.scamdetector.app.ui
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.scamdetector.app.R
@@ -27,6 +30,7 @@ class ScanDetailActivity : AppCompatActivity() {
     private val gson = Gson()
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         super.onCreate(savedInstanceState)
         binding = ActivityScanDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -65,61 +69,67 @@ class ScanDetailActivity : AppCompatActivity() {
         // URL
         binding.tvUrl.text = report.url
 
-        // Risk Score
-        binding.tvRiskScore.text = report.riskScore.toInt().toString()
-        binding.circularProgress.progress = report.riskScore.toInt()
+        // Animated circular progress fill: start at 0, animate to actual score
+        binding.circularProgress.progress = 0
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            binding.circularProgress.setProgressCompat(report.riskScore.toInt(), true)
+        }, 200)
 
-        // Status
+        // Risk Score number
+        binding.tvRiskScore.text = report.riskScore.toInt().toString()
+
+        // 5-tier status
         binding.tvStatus.text = report.status
-        val statusColor = when (report.status) {
-            "Safe" -> R.color.safe_green
-            "Suspicious" -> R.color.suspicious_yellow
-            "Phishing" -> R.color.phishing_red
-            else -> R.color.suspicious_yellow
-        }
+        val statusColor = statusColor(report.status)
         val color = ContextCompat.getColor(this, statusColor)
         binding.tvStatus.setTextColor(color)
         binding.circularProgress.setIndicatorColor(color)
-        binding.cardRiskScore.setStrokeColor(color)
+        binding.cardRiskScore.strokeColor = color
 
         // Confidence
-        binding.tvConfidence.text = "Confidence: ${report.confidence}%"
+        binding.tvConfidence.text = "Confidence: ${report.confidence.toInt()}%"
 
         // ML Prediction
         binding.tvMlPrediction.text = report.mlPrediction
-        binding.tvMlConfidence.text = "${report.mlConfidence}%"
-        binding.progressMl.progress = report.mlConfidence.toInt()
+        binding.tvMlConfidence.text = "${report.mlConfidence.toInt()}%"
+        binding.progressMl.setIndicatorColor(color)
+        binding.progressMl.setProgressCompat(report.mlConfidence.toInt(), true)
 
         // Domain Age
         binding.tvDomainAge.text = report.domainAgeDays?.let {
             "$it days"
         } ?: "Unable to determine"
-        binding.ivDomainAge.setImageResource(
-            if ((report.domainAgeDays ?: 365) < 90) R.drawable.ic_warning else R.drawable.ic_check
+        val domainIcon = if ((report.domainAgeDays ?: 365) < 90) R.drawable.ic_warning else R.drawable.ic_check
+        binding.ivDomainAge.setImageResource(domainIcon)
+        binding.ivDomainAge.imageTintList = ContextCompat.getColorStateList(this,
+            if ((report.domainAgeDays ?: 365) < 90) R.color.phishing_red else R.color.safe_green
         )
 
         // SSL Status
         binding.tvSslStatus.text = when (report.sslValid) {
-            true -> "Valid SSL Certificate"
+            true  -> "Valid SSL Certificate"
             false -> "Invalid / Missing SSL"
-            null -> "Unable to check"
+            null  -> "Unable to check"
         }
         binding.tvSslIssuer.text = "Issuer: ${report.sslIssuer ?: "N/A"}"
         binding.tvSslExpiry.text = "Expires: ${report.sslExpiry ?: "N/A"}"
-        binding.ivSslStatus.setImageResource(
-            if (report.sslValid == true) R.drawable.ic_check else R.drawable.ic_warning
+        val sslIcon = if (report.sslValid == true) R.drawable.ic_check else R.drawable.ic_warning
+        binding.ivSslStatus.setImageResource(sslIcon)
+        binding.ivSslStatus.imageTintList = ContextCompat.getColorStateList(this,
+            if (report.sslValid == true) R.color.safe_green else R.color.phishing_red
         )
 
         // Brand Impersonation
+        binding.cardImpersonation.visibility = View.VISIBLE
         if (report.impersonationRisk) {
-            binding.cardImpersonation.visibility = View.VISIBLE
             binding.tvImpersonationTarget.text =
                 "Possible impersonation of: ${report.impersonationTarget ?: "Unknown Brand"}"
             binding.ivImpersonation.setImageResource(R.drawable.ic_warning)
+            binding.ivImpersonation.imageTintList = ContextCompat.getColorStateList(this, R.color.phishing_red)
         } else {
-            binding.cardImpersonation.visibility = View.VISIBLE
             binding.tvImpersonationTarget.text = "No brand impersonation detected"
             binding.ivImpersonation.setImageResource(R.drawable.ic_check)
+            binding.ivImpersonation.imageTintList = ContextCompat.getColorStateList(this, R.color.safe_green)
         }
 
         // Suspicious Keywords
@@ -133,30 +143,46 @@ class ScanDetailActivity : AppCompatActivity() {
 
         // URL Features
         report.urlFeatures?.let { features ->
-            binding.tvUrlLength.text = "URL Length: ${features.urlLength}"
-            binding.tvHttps.text = "HTTPS: ${if (features.hasHttps) "Yes" else "No"}"
-            binding.tvIpAddress.text = "IP in URL: ${if (features.hasIpAddress) "Yes" else "No"}"
-            binding.tvSubdomains.text = "Subdomains: ${features.numSubdomains}"
-            binding.tvSuspiciousTld.text = "Suspicious TLD: ${if (features.isSuspiciousTld) "Yes" else "No"}"
-            binding.tvShortened.text = "Shortened URL: ${if (features.isShortened) "Yes" else "No"}"
+            val urlLen    = features.urlLength
+            val https     = features.hasHttps
+            val ip        = features.hasIpAddress
+            val subs      = features.numSubdomains
+            val suspTld   = features.isSuspiciousTld
+            val shortened = features.isShortened
+            binding.tvUrlLength.text    = "📐 Length: $urlLen"
+            binding.tvHttps.text        = "🔒 HTTPS: ${if (https) "Yes ✅" else "No ❌"}"
+            binding.tvIpAddress.text    = "🌐 IP in URL: ${if (ip) "Yes ⚠️" else "No"}"
+            binding.tvSubdomains.text   = "🔗 Subdomains: $subs"
+            binding.tvSuspiciousTld.text = "🚩 Suspicious TLD: ${if (suspTld) "Yes ⚠️" else "No"}"
+            binding.tvShortened.text    = "✂️ Shortened URL: ${if (shortened) "Yes ⚠️" else "No"}"
         }
 
         // Google Safe Browsing
         binding.tvSafeBrowsing.text = when (report.googleSafeBrowsing) {
-            "safe" -> "No threats found"
-            "threat_found" -> "⚠️ Threat detected!"
+            "safe"               -> "✅ No threats found"
+            "threat_found"       -> "⚠️ Threat detected!"
             "api_not_configured" -> "Not configured"
-            else -> "Unable to check"
+            else                 -> "Unable to check"
         }
 
         // Recommendations
-        if (report.recommendations.isNotEmpty()) {
-            binding.tvRecommendations.text = report.recommendations.joinToString("\n\n")
-        } else {
-            binding.tvRecommendations.text = "No specific recommendations"
-        }
+        binding.tvRecommendations.text =
+            if (report.recommendations.isNotEmpty())
+                report.recommendations.joinToString("\n\n")
+            else
+                "No specific recommendations"
 
         // Scanned at
         binding.tvScannedAt.text = "Scanned: ${report.scannedAt}"
+    }
+
+    /** Map 5-tier status to the corresponding color resource. */
+    private fun statusColor(status: String): Int = when (status) {
+        "Safe"       -> R.color.safe_green
+        "Low Risk"   -> R.color.low_risk_blue
+        "Suspicious" -> R.color.suspicious_yellow
+        "High Risk"  -> R.color.high_risk_orange
+        "Phishing"   -> R.color.phishing_red
+        else         -> R.color.suspicious_yellow
     }
 }

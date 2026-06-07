@@ -12,12 +12,14 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- Toolbar -->
+        <!-- Toolbar with dark background -->
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
+            android:background="@color/surface"
             app:navigationIcon="@drawable/ic_back"
+            app:navigationIconTint="@color/text_primary"
             app:title="Threat Report"
             app:titleTextColor="@color/text_primary" />
 
@@ -27,28 +29,30 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- URL -->
+            <!-- URL display -->
             <TextView
                 android:id="@+id/tvUrl"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_rounded"
                 android:ellipsize="end"
+                android:fontFamily="monospace"
                 android:maxLines="3"
                 android:padding="12dp"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp"
+                android:textColor="@color/accent"
+                android:textSize="13sp"
                 android:textIsSelectable="true"
                 tools:text="https://paytm-verify-login.com/offer" />
 
-            <!-- Risk Score Card -->
+            <!-- Risk Score Card with colored dynamic border -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardRiskScore"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="4dp"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
                 app:strokeWidth="2dp">
 
                 <LinearLayout
@@ -56,7 +60,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:padding="24dp">
+                    android:padding="28dp">
 
                     <FrameLayout
                         android:layout_width="120dp"
@@ -68,34 +72,42 @@
                             android:layout_height="120dp"
                             android:layout_gravity="center"
                             app:indicatorSize="120dp"
-                            app:trackThickness="8dp"
-                            app:trackCornerRadius="4dp" />
+                            app:trackThickness="10dp"
+                            app:trackColor="@color/surface_variant"
+                            app:trackCornerRadius="5dp" />
 
                         <TextView
                             android:id="@+id/tvRiskScore"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_gravity="center"
-                            android:textSize="36sp"
+                            android:textSize="38sp"
                             android:textStyle="bold"
                             android:textColor="@color/text_primary"
                             tools:text="85" />
                     </FrameLayout>
 
+                    <!-- Status badge -->
                     <TextView
                         android:id="@+id/tvStatus"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:textSize="24sp"
+                        android:layout_marginTop="12dp"
+                        android:background="@drawable/bg_status_badge"
+                        android:paddingStart="20dp"
+                        android:paddingEnd="20dp"
+                        android:paddingTop="6dp"
+                        android:paddingBottom="6dp"
+                        android:textSize="20sp"
                         android:textStyle="bold"
+                        android:letterSpacing="0.02"
                         tools:text="Phishing" />
 
                     <TextView
                         android:id="@+id/tvConfidence"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
+                        android:layout_marginTop="6dp"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp"
                         tools:text="Confidence: 92%" />
@@ -108,8 +120,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/card_border"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -117,13 +131,27 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
+                    <!-- Section header with left accent bar -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="🧠 ML Prediction"
-                        android:textColor="@color/text_primary"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:layout_width="3dp"
+                            android:layout_height="18dp"
+                            android:background="@color/primary"
+                            android:layout_marginEnd="8dp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ðŸ§  ML Prediction"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
 
                     <LinearLayout
                         android:layout_width="match_parent"
@@ -154,9 +182,10 @@
                         android:id="@+id/progressMl"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
+                        android:layout_marginTop="6dp"
                         app:trackThickness="6dp"
-                        app:trackCornerRadius="3dp" />
+                        app:trackCornerRadius="3dp"
+                        app:trackColor="@color/surface_variant" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -166,8 +195,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/card_border"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -178,8 +209,8 @@
 
                     <ImageView
                         android:id="@+id/ivDomainAge"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
                         android:src="@drawable/ic_warning" />
 
                     <LinearLayout
@@ -214,8 +245,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/card_border"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -226,8 +259,8 @@
 
                     <ImageView
                         android:id="@+id/ivSslStatus"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
                         android:src="@drawable/ic_warning" />
 
                     <LinearLayout
@@ -279,8 +312,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/card_border"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -291,8 +326,8 @@
 
                     <ImageView
                         android:id="@+id/ivImpersonation"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
                         android:src="@drawable/ic_warning" />
 
                     <LinearLayout
@@ -327,8 +362,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/card_border"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -339,7 +376,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🔑 Suspicious Keywords"
+                        android:text="ðŸ”‘ Suspicious Keywords"
                         android:textColor="@color/text_primary"
                         android:textSize="15sp"
                         android:textStyle="bold" />
@@ -356,7 +393,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
-                        android:textColor="@color/text_primary"
+                        android:textColor="@color/suspicious_yellow"
                         android:textSize="14sp"
                         tools:text="verify, login, account" />
                 </LinearLayout>
@@ -368,8 +405,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/card_border"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -380,7 +419,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🔗 URL Analysis"
+                        android:text="ðŸ”— URL Analysis"
                         android:textColor="@color/text_primary"
                         android:textSize="15sp"
                         android:textStyle="bold"
@@ -390,6 +429,7 @@
                         android:id="@+id/tvUrlLength"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:textColor="@color/text_primary"
                         android:textSize="13sp"
                         tools:text="URL Length: 78" />
 
@@ -397,6 +437,7 @@
                         android:id="@+id/tvHttps"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:textColor="@color/text_primary"
                         android:textSize="13sp"
                         tools:text="HTTPS: No" />
 
@@ -404,6 +445,7 @@
                         android:id="@+id/tvIpAddress"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:textColor="@color/text_primary"
                         android:textSize="13sp"
                         tools:text="IP in URL: No" />
 
@@ -411,6 +453,7 @@
                         android:id="@+id/tvSubdomains"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:textColor="@color/text_primary"
                         android:textSize="13sp"
                         tools:text="Subdomains: 2" />
 
@@ -418,6 +461,7 @@
                         android:id="@+id/tvSuspiciousTld"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:textColor="@color/text_primary"
                         android:textSize="13sp"
                         tools:text="Suspicious TLD: No" />
 
@@ -425,6 +469,7 @@
                         android:id="@+id/tvShortened"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:textColor="@color/text_primary"
                         android:textSize="13sp"
                         tools:text="Shortened URL: No" />
                 </LinearLayout>
@@ -436,8 +481,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/card_border"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -448,7 +495,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="🛡️ Google Safe Browsing"
+                        android:text="ðŸ›¡ï¸ Google Safe Browsing"
                         android:textColor="@color/text_primary"
                         android:textSize="15sp"
                         android:textStyle="bold" />
@@ -470,8 +517,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/accent"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -482,7 +531,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="💡 Recommendations"
+                        android:text="ðŸ’¡ Recommendations"
                         android:textColor="@color/text_primary"
                         android:textSize="15sp"
                         android:textStyle="bold" />
@@ -494,7 +543,7 @@
                         android:layout_marginTop="8dp"
                         android:textColor="@color/text_primary"
                         android:textSize="14sp"
-                        android:lineSpacingMultiplier="1.3"
+                        android:lineSpacingMultiplier="1.4"
                         tools:text="Do not click this link..." />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -505,8 +554,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
                 android:gravity="center"
-                android:textColor="@color/text_secondary"
+                android:textColor="@color/text_hint"
                 android:textSize="12sp"
                 tools:text="Scanned: 2026-02-19T14:30:00" />
 

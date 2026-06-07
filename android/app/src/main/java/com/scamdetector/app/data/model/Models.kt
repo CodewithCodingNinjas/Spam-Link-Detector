@@ -17,6 +17,7 @@ data class ThreatReport(
     @SerializedName("url") val url: String,
     @SerializedName("risk_score") val riskScore: Double,
     @SerializedName("status") val status: String,
+    @SerializedName("risk_level") val riskLevel: String? = null,
     @SerializedName("confidence") val confidence: Double,
     @SerializedName("ml_prediction") val mlPrediction: String,
     @SerializedName("ml_confidence") val mlConfidence: Double,
@@ -29,6 +30,9 @@ data class ThreatReport(
     @SerializedName("suspicious_keywords") val suspiciousKeywords: List<String>,
     @SerializedName("url_features") val urlFeatures: URLFeatures?,
     @SerializedName("google_safe_browsing") val googleSafeBrowsing: String?,
+    @SerializedName("redirect_count") val redirectCount: Int = 0,
+    @SerializedName("final_url") val finalUrl: String? = null,
+    @SerializedName("threat_summary") val threatSummary: String? = null,
     @SerializedName("recommendations") val recommendations: List<String>,
     @SerializedName("scanned_at") val scannedAt: String
 )

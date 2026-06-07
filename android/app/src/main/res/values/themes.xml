@@ -1,11 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.ScamDetector" parent="Theme.Material3.Light.NoActionBar">
+    <style name="Theme.ScamDetector" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Brand -->
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
         <item name="colorAccent">@color/accent</item>
-        <item name="android:statusBarColor">@color/primary_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/accent</item>
+        <item name="colorOnSecondary">@color/black</item>
+
+        <!-- System bars (edge-to-edge) -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@color/background</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+
+        <!-- Window -->
         <item name="android:windowBackground">@color/background</item>
-        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+
+        <!-- Surface / cards -->
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorSurfaceVariant">@color/surface_variant</item>
+        <item name="colorOutline">@color/card_border</item>
+
+        <!-- Text -->
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:textColorHint">@color/text_hint</item>
+
+        <!-- Toolbar -->
+        <item name="toolbarStyle">@style/Widget.ScamDetector.Toolbar</item>
+    </style>
+
+    <style name="Widget.ScamDetector.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="android:background">@color/surface</item>
+        <item name="titleTextColor">@color/text_primary</item>
+        <item name="navigationIconTint">@color/text_primary</item>
     </style>
 </resources>

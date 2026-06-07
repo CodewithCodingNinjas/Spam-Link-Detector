@@ -13,41 +13,52 @@
         android:orientation="vertical"
         android:padding="16dp">
 
-        <!-- App Header -->
+        <!-- App Header with gradient banner -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/bg_gradient_header"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingBottom="16dp">
+            android:padding="20dp"
+            android:layout_marginStart="-16dp"
+            android:layout_marginEnd="-16dp"
+            android:layout_marginTop="-16dp"
+            android:layout_marginBottom="16dp"
+            android:paddingTop="44dp"
+            android:paddingBottom="24dp"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp">
 
             <ImageView
-                android:layout_width="40dp"
-                android:layout_height="40dp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
                 android:src="@drawable/ic_shield"
-                app:tint="@color/primary" />
+                app:tint="@color/white" />
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="12dp"
+                android:layout_marginStart="14dp"
                 android:orientation="vertical">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Scam Link Detector"
-                    android:textColor="@color/text_primary"
-                    android:textSize="20sp"
-                    android:textStyle="bold" />
+                    android:textColor="@color/white"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.02" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="AI-Powered URL Threat Intelligence"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
+                    android:textColor="#C8C8FF"
+                    android:textSize="12sp"
+                    android:layout_marginTop="2dp" />
             </LinearLayout>
 
             <ImageButton
@@ -57,7 +68,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="Scan QR Code"
                 android:src="@drawable/ic_qr_code"
-                app:tint="@color/primary" />
+                app:tint="@color/white" />
         </LinearLayout>
 
         <!-- Stats Cards Row -->
@@ -67,14 +78,17 @@
             android:orientation="horizontal"
             android:layout_marginBottom="16dp">
 
+            <!-- Stats card: Total -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginEnd="4dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/card_border"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -101,14 +115,17 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Stats card: Safe -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginHorizontal="4dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/safe_green"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -135,14 +152,17 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Stats card: Suspicious -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginHorizontal="4dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/suspicious_yellow"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -169,14 +189,17 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Stats card: Phishing -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="4dp"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:strokeWidth="0dp">
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/surface"
+                app:strokeColor="@color/phishing_red"
+                app:strokeWidth="1dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -210,8 +233,10 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:cardCornerRadius="16dp"
-            app:cardElevation="4dp"
-            app:strokeWidth="0dp">
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/surface"
+            app:strokeColor="@color/card_border"
+            app:strokeWidth="1dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -274,9 +299,13 @@
                         android:layout_weight="2"
                         android:layout_marginHorizontal="4dp"
                         android:text="Scan Now"
+                        android:textColor="@color/white"
                         android:textStyle="bold"
+                        android:background="@drawable/bg_scan_button"
                         app:icon="@drawable/ic_scan"
-                        app:backgroundTint="@color/primary" />
+                        app:backgroundTint="@null"
+                        app:iconTint="@color/white"
+                        app:cornerRadius="12dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnClear"
@@ -299,8 +328,10 @@
             android:layout_marginBottom="16dp"
             android:visibility="gone"
             app:cardCornerRadius="16dp"
-            app:cardElevation="4dp"
-            app:strokeWidth="0dp">
+            app:cardElevation="0dp"
+            app:cardBackgroundColor="@color/surface"
+            app:strokeColor="@color/primary"
+            app:strokeWidth="1dp">
 
             <FrameLayout
                 android:layout_width="match_parent"
@@ -544,9 +575,8 @@
             android:gravity="center"
             android:padding="32dp"
             android:text="No scans yet. Enter a URL above to get started!"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp"
-            android:visibility="visible" />
+            android:textColor="@color/text_hint"
+            android:visibility="gone" />
 
         <!-- History RecyclerView -->
         <androidx.recyclerview.widget.RecyclerView
@@ -554,7 +584,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:nestedScrollingEnabled="false"
-            android:visibility="gone"
             tools:listitem="@layout/item_scan_history"
             tools:itemCount="3" />
 

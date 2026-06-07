@@ -227,19 +227,33 @@ Get detailed scan result by ID.
 
 ## 📊 Risk Scoring Weights
 
-| Component | Weight |
-|---|---|
-| ML Model Prediction | 35% |
-| Domain Age Analysis | 15% |
-| SSL Certificate Check | 10% |
-| Brand Impersonation | 15% |
-| URL Structural Features | 10% |
-| Google Safe Browsing | 15% |
+These are the **authoritative weights**, matching `backend/modules/risk_engine.py`
+(`RiskScoringEngine.WEIGHTS`). They sum to 1.00.
 
-**Score Ranges:**
-- 0-39: ✅ **Safe**
-- 40-69: ⚠️ **Suspicious**
-- 70-100: 🚨 **Phishing**
+| Component | Weight | Rationale |
+|---|---|---|
+| ML Model Prediction | 30% | Primary signal; generalises to zero-hour URLs but is probabilistic, so capped below a majority to avoid single-point dominance. |
+| Brand Impersonation | 15% | High-precision signal — look-alike domains are strong fraud indicators. |
+| Google Safe Browsing | 13% | High precision when it fires, but reactive/low recall, so weighted below ML. |
+| Domain Age (WHOIS) | 12% | New domains correlate strongly with phishing; can be null on restricted TLDs. |
+| SSL Certificate | 10% | Useful but weak alone (most phishing now uses valid HTTPS). |
+| URL Structural Rules | 10% | Deterministic lexical backstop, independent of the ML model. |
+| Redirect Chain | 10% | Surfaces the true destination of shortened/obfuscated links. |
+
+**Weight methodology:** weights are **expert-assigned** (heuristic) and bounded so
+that no single probabilistic signal exceeds a plurality. High-precision
+signals (Safe Browsing threat hit, ≥90%-similarity brand impersonation, invalid
+SSL on a <30-day-old domain) additionally trigger **hard override floors** in the
+risk engine, so a confirmed threat is never diluted by softer signals. The
+weights are a single source of truth (`WEIGHTS` dict) and can be tuned or replaced
+with learned weights once a labelled production-feedback set is available.
+
+**Score Ranges (5-tier, matches `risk_engine._classify`):**
+- 0–20: ✅ **Safe**
+- 21–40: ⚙️ **Low Risk**
+- 41–60: ⚠️ **Suspicious**
+- 61–80: 🔶 **High Risk**
+- 81–100: 🚨 **Phishing**
 
 ---
 

@@ -43,17 +43,23 @@ class ScanHistoryAdapter(
             val dateFormat = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
             binding.tvDate.text = dateFormat.format(Date(scan.scannedAt))
 
-            // Status color
+            // Status color - 5-tier
             val statusColor = when (scan.status) {
-                "Safe" -> R.color.safe_green
+                "Safe"       -> R.color.safe_green
+                "Low Risk"   -> R.color.low_risk_blue
                 "Suspicious" -> R.color.suspicious_yellow
-                "Phishing" -> R.color.phishing_red
-                else -> R.color.suspicious_yellow
+                "High Risk"  -> R.color.high_risk_orange
+                "Phishing"   -> R.color.phishing_red
+                else         -> R.color.suspicious_yellow
             }
             binding.tvStatus.setTextColor(
                 ContextCompat.getColor(binding.root.context, statusColor)
             )
             binding.viewStatusIndicator.setBackgroundColor(
+                ContextCompat.getColor(binding.root.context, statusColor)
+            )
+            // Tint the score badge border to match status
+            binding.tvRiskScore.setTextColor(
                 ContextCompat.getColor(binding.root.context, statusColor)
             )
 

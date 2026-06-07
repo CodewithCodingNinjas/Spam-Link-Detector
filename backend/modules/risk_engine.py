@@ -1,4 +1,4 @@
-"""
+﻿"""
 Final Risk Scoring Engine
 Combines all analysis modules into a single weighted risk score.
 """
@@ -13,6 +13,7 @@ from modules.domain_intel import DomainIntelligence
 from modules.ssl_checker import SSLChecker
 from modules.brand_impersonation import BrandImpersonationDetector
 from modules.safe_browsing import GoogleSafeBrowsing
+from modules.redirect_checker import redirect_checker
 from ml.predictor import get_predictor
 
 logger = logging.getLogger(__name__)
@@ -21,17 +22,18 @@ logger = logging.getLogger(__name__)
 class RiskScoringEngine:
     """
     Combines ML predictions with rule-based threat intelligence
-    to produce a final risk score (0-100).
+    to produce a final risk score (0-100) with 5-tier classification.
     """
 
-    # Weight configuration for different risk factors
+    # Rebalanced weight configuration (total = 1.00)
     WEIGHTS = {
-        "ml_prediction": 0.35,       # ML model weight
-        "domain_age": 0.15,          # Domain age check weight
-        "ssl_check": 0.10,           # SSL validation weight
-        "brand_impersonation": 0.15, # Impersonation detection weight
-        "url_features": 0.10,        # URL structural features weight
-        "safe_browsing": 0.15,       # Google Safe Browsing weight
+        "ml_prediction":      0.30,
+        "domain_age":         0.12,
+        "ssl_check":          0.10,
+        "brand_impersonation": 0.15,
+        "url_features":       0.10,
+        "safe_browsing":      0.13,
+        "redirect_chain":     0.10,
     }
 
     def __init__(self):
@@ -44,7 +46,7 @@ class RiskScoringEngine:
     async def analyze(self, url: str) -> Dict[str, Any]:
         """
         Perform complete threat analysis on a URL.
-        
+
         Returns a comprehensive threat report.
         """
         logger.info(f"Starting analysis for: {url}")
@@ -68,59 +70,84 @@ class RiskScoringEngine:
         ssl_task = self.ssl_checker.check(domain)
         brand_task = self.brand_detector.analyze(url)
         safe_browsing_task = self.safe_browsing.check(url)
+        redirect_task = redirect_checker.check(url)
 
-        domain_result, ssl_result, brand_result, sb_result = await asyncio.gather(
-            domain_task, ssl_task, brand_task, safe_browsing_task,
+        (
+            domain_result, ssl_result, brand_result, sb_result, redir_result
+        ) = await asyncio.gather(
+            domain_task, ssl_task, brand_task, safe_browsing_task, redirect_task,
             return_exceptions=True,
         )
 
         # Handle exceptions in parallel tasks
         if isinstance(domain_result, Exception):
             logger.error(f"Domain intel error: {domain_result}")
-            domain_result = {"risk_contribution": 10.0, "domain_age_days": None, "error": str(domain_result)}
+            domain_result = {"risk_contribution": 10.0, "domain_age_days": None}
         if isinstance(ssl_result, Exception):
             logger.error(f"SSL check error: {ssl_result}")
-            ssl_result = {"risk_contribution": 10.0, "ssl_valid": None, "error": str(ssl_result)}
+            ssl_result = {"risk_contribution": 10.0, "ssl_valid": None}
         if isinstance(brand_result, Exception):
             logger.error(f"Brand detection error: {brand_result}")
-            brand_result = {"risk_contribution": 0.0, "impersonation_risk": False, "error": str(brand_result)}
+            brand_result = {"risk_contribution": 0.0, "impersonation_risk": False}
         if isinstance(sb_result, Exception):
             logger.error(f"Safe browsing error: {sb_result}")
             sb_result = {"risk_contribution": 0.0, "safe_browsing_status": "error"}
+        if isinstance(redir_result, Exception):
+            logger.error(f"Redirect check error: {redir_result}")
+            redir_result = {"risk_contribution": 0.0, "redirect_count": 0, "final_url": url}
 
         # Step 4: Calculate component scores (0-100 each)
-        ml_score = ml_result["probability"] * 100
-        domain_score = min(domain_result.get("risk_contribution", 0) * 3.33, 100)
-        ssl_score = min(ssl_result.get("risk_contribution", 0) * 4, 100)
-        brand_score = min(brand_result.get("risk_contribution", 0) * 4, 100)
+        ml_score          = ml_result["probability"] * 100
+        domain_score      = min(domain_result.get("risk_contribution", 0) * 3.33, 100)
+        ssl_score         = min(ssl_result.get("risk_contribution", 0) * 4, 100)
+        brand_score       = min(brand_result.get("risk_contribution", 0) * 4, 100)
         url_feature_score = self._calculate_url_feature_score(url_features)
-        sb_score = min(sb_result.get("risk_contribution", 0) * 2.86, 100)
+        sb_score          = min(sb_result.get("risk_contribution", 0) * 2.86, 100)
+        # redirect risk_contribution is already 0-30, scale to 0-100
+        redir_score       = min(redir_result.get("risk_contribution", 0) * 3.33, 100)
 
         # Step 5: Weighted final score
-        final_score = (
-            ml_score * self.WEIGHTS["ml_prediction"]
-            + domain_score * self.WEIGHTS["domain_age"]
-            + ssl_score * self.WEIGHTS["ssl_check"]
-            + brand_score * self.WEIGHTS["brand_impersonation"]
+        weighted_score = (
+            ml_score          * self.WEIGHTS["ml_prediction"]
+            + domain_score    * self.WEIGHTS["domain_age"]
+            + ssl_score       * self.WEIGHTS["ssl_check"]
+            + brand_score     * self.WEIGHTS["brand_impersonation"]
             + url_feature_score * self.WEIGHTS["url_features"]
-            + sb_score * self.WEIGHTS["safe_browsing"]
+            + sb_score        * self.WEIGHTS["safe_browsing"]
+            + redir_score     * self.WEIGHTS["redirect_chain"]
         )
+
+        # Step 6: Critical override rules
+        final_score = weighted_score
+
+        # Override 1: Google Safe Browsing found a threat â†’ min 85
+        if sb_result.get("safe_browsing_status") == "threat_found":
+            final_score = max(final_score, 85.0)
+
+        # Override 2: Brand impersonation with high confidence â†’ min 75
+        # brand module exposes similarity on a 0-100 scale as `similarity_score`.
+        impersonation_sim = brand_result.get("similarity_score", 0)
+        if brand_result.get("impersonation_risk") and impersonation_sim >= 90:
+            final_score = max(final_score, 75.0)
+
+        # Override 3: SSL invalid AND new domain (<30 days) â†’ min 70
+        domain_age = domain_result.get("domain_age_days")
+        if ssl_result.get("ssl_valid") is False and domain_age is not None and domain_age < 30:
+            final_score = max(final_score, 70.0)
 
         # Clamp to 0-100
         final_score = round(min(max(final_score, 0), 100), 1)
 
-        # Determine status
-        if final_score >= 70:
-            status = "Phishing"
-        elif final_score >= 40:
-            status = "Suspicious"
-        else:
-            status = "Safe"
+        # Step 7: 5-tier status
+        status, risk_level = self._classify(final_score)
 
-        # Calculate overall confidence
+        # Step 8: Confidence & summary
         confidence = round(ml_result.get("confidence", 50.0), 1)
+        threat_summary = self._build_threat_summary(
+            status, ml_result, domain_result, ssl_result, brand_result, url_features, sb_result
+        )
 
-        # Generate recommendations
+        # Step 9: Recommendations
         recommendations = self._generate_recommendations(
             final_score, status, ml_result, domain_result,
             ssl_result, brand_result, url_features,
@@ -131,6 +158,7 @@ class RiskScoringEngine:
             "url": url,
             "risk_score": final_score,
             "status": status,
+            "risk_level": risk_level,
             "confidence": confidence,
             "ml_prediction": ml_result["prediction"],
             "ml_confidence": round(ml_result["confidence"], 1),
@@ -149,23 +177,53 @@ class RiskScoringEngine:
                 "is_suspicious_tld": bool(url_features["is_suspicious_tld"]),
                 "is_shortened": bool(url_features["is_shortened"]),
                 "suspicious_keyword_count": url_features["suspicious_keyword_count"],
+                "shannon_entropy": round(url_features.get("shannon_entropy", 0), 3),
+                "has_punycode": bool(url_features.get("has_punycode", 0)),
+                "path_depth": url_features.get("path_depth", 0),
+                "query_param_count": url_features.get("query_param_count", 0),
             },
             "google_safe_browsing": sb_result.get("safe_browsing_status"),
+            "redirect_count": redir_result.get("redirect_count", 0),
+            "final_url": redir_result.get("final_url", url),
+            "threat_summary": threat_summary,
             "recommendations": recommendations,
             "scanned_at": datetime.utcnow().isoformat(),
             # Component scores for transparency
             "_component_scores": {
-                "ml_score": round(ml_score, 1),
-                "domain_score": round(domain_score, 1),
-                "ssl_score": round(ssl_score, 1),
-                "brand_score": round(brand_score, 1),
-                "url_feature_score": round(url_feature_score, 1),
+                "ml_score":           round(ml_score, 1),
+                "domain_score":       round(domain_score, 1),
+                "ssl_score":          round(ssl_score, 1),
+                "brand_score":        round(brand_score, 1),
+                "url_feature_score":  round(url_feature_score, 1),
                 "safe_browsing_score": round(sb_score, 1),
+                "redirect_score":     round(redir_score, 1),
             },
         }
 
         logger.info(f"Analysis complete: {url} -> {status} (score: {final_score})")
         return report
+
+    # ------------------------------------------------------------------
+    # Classification
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _classify(score: float):
+        """Return (status, risk_level) for 5-tier classification."""
+        if score <= 20:
+            return "Safe", "Safe âœ…"
+        elif score <= 40:
+            return "Low Risk", "Low Risk âš™ï¸"
+        elif score <= 60:
+            return "Suspicious", "Suspicious âš ï¸"
+        elif score <= 80:
+            return "High Risk", "High Risk ðŸ”¶"
+        else:
+            return "Phishing", "Phishing ðŸš¨"
+
+    # ------------------------------------------------------------------
+    # URL Feature Score
+    # ------------------------------------------------------------------
 
     def _calculate_url_feature_score(self, features: Dict[str, Any]) -> float:
         """Calculate risk score from URL structural features (0-100)."""
@@ -208,7 +266,91 @@ class RiskScoringEngine:
         if features["has_double_slash_redirect"]:
             score += 10
 
+        # High Shannon entropy (> 4.5 bits is suspicious for a URL)
+        entropy = features.get("shannon_entropy", 0)
+        if entropy > 4.5:
+            score += 10
+        if entropy > 5.0:
+            score += 5
+
+        # Punycode (IDN homograph attack)
+        if features.get("has_punycode", 0):
+            score += 15
+
+        # Very deep path (> 5 segments)
+        if features.get("path_depth", 0) > 5:
+            score += 5
+
+        # Many query parameters (> 5)
+        if features.get("query_param_count", 0) > 5:
+            score += 5
+
+        # Data URI
+        if features.get("has_data_uri", 0):
+            score += 25
+
+        # Email embedded in URL
+        if features.get("has_email_in_url", 0):
+            score += 10
+
         return min(score, 100)
+
+    # ------------------------------------------------------------------
+    # Threat Summary
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _build_threat_summary(
+        status, ml_result, domain_result, ssl_result,
+        brand_result, url_features, sb_result
+    ) -> str:
+        """Build a human-readable one-line explanation of the classification."""
+        reasons: List[str] = []
+
+        if sb_result.get("safe_browsing_status") == "threat_found":
+            reasons.append("flagged by Google Safe Browsing")
+
+        if brand_result.get("impersonation_risk"):
+            target = brand_result.get("impersonation_target", "known brand")
+            reasons.append(f"brand impersonation of {target}")
+
+        if ssl_result.get("ssl_valid") is False:
+            reasons.append("no valid SSL")
+
+        domain_age = domain_result.get("domain_age_days")
+        if domain_age is not None and domain_age < 30:
+            reasons.append(f"new domain ({domain_age}d old)")
+        elif domain_age is not None and domain_age < 180:
+            reasons.append(f"young domain ({domain_age}d old)")
+
+        if not url_features.get("has_https"):
+            reasons.append("uses HTTP")
+
+        if url_features.get("has_ip_address"):
+            reasons.append("IP address in URL")
+
+        if url_features.get("is_suspicious_tld"):
+            reasons.append(f"suspicious TLD ({url_features.get('tld', '')})") 
+
+        if url_features.get("has_punycode"):
+            reasons.append("Punycode domain (possible homograph attack)")
+
+        kw_count = url_features.get("suspicious_keyword_count", 0)
+        if kw_count >= 2:
+            reasons.append(f"{kw_count} suspicious keywords")
+
+        # ml confidence is a 0-100 percentage (see predictor.predict)
+        if ml_result.get("prediction") in ("Phishing", "Suspicious") and ml_result.get("confidence", 0) >= 70:
+            reasons.append(f"ML model: {ml_result['prediction']} ({ml_result['confidence']:.0f}%)")
+
+        if not reasons:
+            return f"URL classified as {status} based on combined analysis."
+
+        return "Classified as " + status + " â€” " + " + ".join(reasons) + "."
+
+    # ------------------------------------------------------------------
+    # Recommendations
+    # ------------------------------------------------------------------
 
     def _generate_recommendations(
         self, score, status, ml_result, domain_result,
@@ -218,38 +360,44 @@ class RiskScoringEngine:
         recs = []
 
         if status == "Phishing":
-            recs.append("⚠️ DO NOT click this link! It has been identified as likely phishing.")
-            recs.append("🔒 Never enter personal information on this website.")
-
-        if status == "Suspicious":
-            recs.append("⚠️ Exercise caution with this link. It shows some suspicious indicators.")
+            recs.append("âš ï¸ DO NOT click this link! It has been identified as likely phishing.")
+            recs.append("ðŸ”’ Never enter personal information on this website.")
+        elif status == "High Risk":
+            recs.append("ðŸ”¶ High risk detected. Avoid clicking unless you absolutely trust the source.")
+        elif status == "Suspicious":
+            recs.append("âš ï¸ Exercise caution with this link. It shows some suspicious indicators.")
+        elif status == "Low Risk":
+            recs.append("âš™ï¸ Minor risk signals detected. Proceed with awareness.")
 
         if brand_result.get("impersonation_risk"):
             target = brand_result.get("impersonation_target", "a known brand")
-            recs.append(f"🎭 This URL may be impersonating {target}. Verify by visiting the official website directly.")
+            recs.append(f"ðŸŽ­ This URL may be impersonating {target}. Verify by visiting the official website directly.")
 
         if domain_result.get("is_new_domain"):
             days = domain_result.get("domain_age_days", "unknown")
-            recs.append(f"🆕 This domain was registered only {days} days ago. New domains are often used in scams.")
+            recs.append(f"ðŸ†• This domain was registered only {days} days ago. New domains are often used in scams.")
 
         if ssl_result.get("ssl_valid") is False:
-            recs.append("🔓 This website does not have a valid SSL certificate. Your data may not be encrypted.")
+            recs.append("ðŸ”“ This website does not have a valid SSL certificate. Your data may not be encrypted.")
 
         if not url_features.get("has_https"):
-            recs.append("🔓 This URL uses HTTP instead of HTTPS. Connection is not secure.")
+            recs.append("ðŸ”“ This URL uses HTTP instead of HTTPS. Connection is not secure.")
 
         if url_features.get("has_ip_address"):
-            recs.append("🌐 This URL uses an IP address instead of a domain name, which is unusual for legitimate sites.")
+            recs.append("ðŸŒ This URL uses an IP address instead of a domain name, which is unusual for legitimate sites.")
 
         if url_features.get("is_shortened"):
-            recs.append("🔗 This is a shortened URL. The actual destination is hidden.")
+            recs.append("ðŸ”— This is a shortened URL. The actual destination is hidden.")
 
         if url_features.get("suspicious_keyword_count", 0) > 2:
-            recs.append("🔑 This URL contains multiple suspicious keywords commonly used in phishing attacks.")
+            recs.append("ðŸ”‘ This URL contains multiple suspicious keywords commonly used in phishing attacks.")
+
+        if url_features.get("has_punycode"):
+            recs.append("âš ï¸ This domain uses Punycode encoding, a common technique in homograph attacks to mimic trusted domains.")
 
         if status == "Safe":
-            recs.append("✅ This URL appears to be safe based on our analysis.")
-            recs.append("ℹ️ Always verify the sender's identity before clicking links from unknown sources.")
+            recs.append("âœ… This URL appears to be safe based on our analysis.")
+            recs.append("â„¹ï¸ Always verify the sender's identity before clicking links from unknown sources.")
 
         return recs
 
